@@ -5,20 +5,16 @@
   "main": "main.js",
   "author": "Gamasoft",
   "scripts": {
-    "start": "electron .",
-    "postinstall": "electron-rebuild -f -w better-sqlite3",
+    "start": "env -u ELECTRON_RUN_AS_NODE electron .",
     "pack": "electron-builder --dir",
     "dist": "electron-builder --mac",
-    "dist:win": "electron-builder --win --x64",
-    "migrate:supabase": "ELECTRON_RUN_AS_NODE=1 electron scripts/migrate-sqlite-to-supabase.js"
+    "dist:win": "electron-builder --win --x64"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",
-    "better-sqlite3": "^11.7.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "@electron/rebuild": "^3.7.0",
     "dotenv": "^16.4.5",
     "electron": "^28.0.0",
     "electron-builder": "^25.1.8"
@@ -27,9 +23,7 @@
     "appId": "com.gamasoft.gastoflow",
     "productName": "GastoFlow",
     "asar": true,
-    "asarUnpack": [
-      "node_modules/better-sqlite3/**/*"
-    ],
+    "asarUnpack": [],
     "files": [
       "**/*",
       "!data/**/*",

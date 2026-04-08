@@ -10,126 +10,6 @@ const {
   dbCategoryToSlug,
 } = require('./gasto-common')
 
-function makeSqliteBackend(db) {
-  return {
-    mode: 'sqlite',
-
-    async getGastos() {
-      const rows = db.prepare('SELECT * FROM expenses ORDER BY date DESC, id DESC').all()
-      return rows.map(rowToGasto)
-    },
-
-    async addGasto(gasto) {
-      const persona = coercePerson(gasto.persona)
-      const at = coerceAmountTip(gasto.importe, gasto.propina)
-      if (!at) {
-        const rows = db.prepare('SELECT * FROM expenses ORDER BY date DESC, id DESC').all()
-        return rows.map(rowToGasto)
-      }
-      const insert = db.prepare(`
-        INSERT INTO expenses (date, category, description, amount, tip, person)
-        VALUES (?, ?, ?, ?, ?, ?)
-      `)
-      const fechaRegistro = coerceDateYmd(gasto.fecha) || todayYmd()
-      insert.run(
-        fechaRegistro,
-        slugToDbCategory(gasto.categoria),
-        gasto.descripcion,
-        at.amount,
-        at.tip,
-        persona
-      )
-      const rows = db.prepare('SELECT * FROM expenses ORDER BY date DESC, id DESC').all()
-      return rows.map(rowToGasto)
-    },
-
-    async deleteGasto(id) {
-      db.prepare('DELETE FROM expenses WHERE id = ?').run(id)
-      const rows = db.prepare('SELECT * FROM expenses ORDER BY date DESC, id DESC').all()
-      return rows.map(rowToGasto)
-    },
-
-    async updateGasto(payload) {
-      const id = Number(payload.id)
-      if (!Number.isInteger(id) || id < 1) {
-        const rows = db.prepare('SELECT * FROM expenses ORDER BY date DESC, id DESC').all()
-        return rows.map(rowToGasto)
-      }
-      const persona = coercePerson(payload.persona)
-      const dateStr = coerceDateYmd(payload.fecha)
-      const at = coerceAmountTip(payload.importe, payload.propina)
-      if (!at) {
-        const rows = db.prepare('SELECT * FROM expenses ORDER BY date DESC, id DESC').all()
-        return rows.map(rowToGasto)
-      }
-      const stmt = db.prepare(`
-        UPDATE expenses
-        SET date = ?, category = ?, description = ?, amount = ?, tip = ?, person = ?
-        WHERE id = ?
-      `)
-      stmt.run(
-        dateStr,
-        slugToDbCategory(payload.categoria),
-        String(payload.descripcion || ''),
-        at.amount,
-        at.tip,
-        persona,
-        id
-      )
-      const rows = db.prepare('SELECT * FROM expenses ORDER BY date DESC, id DESC').all()
-      return rows.map(rowToGasto)
-    },
-
-    async getStats(payload) {
-      let ymRaw = null
-      let personaFiltro = null
-      if (typeof payload === 'string') {
-        ymRaw = payload
-      } else if (payload && typeof payload === 'object') {
-        ymRaw = payload.yearMonth
-        personaFiltro = payload.persona
-      }
-      const ym = coerceYearMonth(ymRaw) || currentYearMonth()
-      const p =
-        personaFiltro &&
-        personaFiltro !== 'todos' &&
-        String(personaFiltro).trim()
-          ? String(personaFiltro).trim()
-          : null
-
-      const rows = p
-        ? db
-            .prepare(
-              `SELECT category, amount, tip FROM expenses WHERE substr(date, 1, 7) = ? AND person = ?`
-            )
-            .all(ym, p)
-        : db
-            .prepare(
-              `SELECT category, amount, tip FROM expenses WHERE substr(date, 1, 7) = ?`
-            )
-            .all(ym)
-
-      return aggregateStats(rows, ym)
-    },
-
-    async getExportRows(yearMonth) {
-      const ym = coerceYearMonth(yearMonth)
-      if (ym) {
-        return db
-          .prepare(
-            `SELECT date, category, description, amount, tip, person FROM expenses WHERE substr(date,1,7) = ? ORDER BY date ASC, id ASC`
-          )
-          .all(ym)
-      }
-      return db
-        .prepare(
-          `SELECT date, category, description, amount, tip, person FROM expenses ORDER BY date ASC, id ASC`
-        )
-        .all()
-    },
-  }
-}
-
 function aggregateStats(rows, ym) {
   const total = rows.reduce((s, r) => s + Number(r.amount) + Number(r.tip || 0), 0)
   const propinasTotal = rows.reduce((s, r) => s + Number(r.tip || 0), 0)
@@ -280,19 +160,20 @@ function readSupabaseConfig(app) {
   return null
 }
 
-function createBackend(app, sqliteDb) {
+function createBackend(app) {
   const cfg = readSupabaseConfig(app)
-  if (cfg) {
-    const { createClient } = require('@supabase/supabase-js')
-    const client = createClient(cfg.url, cfg.key)
-    return makeSupabaseBackend(client)
+  if (!cfg) {
+    throw new Error(
+      'Falta configuración de Supabase (SUPABASE_URL + SUPABASE_ANON_KEY o supabase-config.json).'
+    )
   }
-  return makeSqliteBackend(sqliteDb)
+  const { createClient } = require('@supabase/supabase-js')
+  const client = createClient(cfg.url, cfg.key)
+  return makeSupabaseBackend(client)
 }
 
 module.exports = {
   createBackend,
   readSupabaseConfig,
-  makeSqliteBackend,
   makeSupabaseBackend,
 }

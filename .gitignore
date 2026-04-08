@@ -11,9 +11,10 @@ yarn-error.log*
 Thumbs.db
 Desktop.ini
 
-# --- SQLite (modo WAL): NO subir estos; son temporales y pueden romper copias ---
-*.db-wal
-*.db-shm
+## (SQLite eliminado) Si aún conservas backups, puedes ignorarlos opcionalmente:
+# *.db
+# *.db-wal
+# *.db-shm
 
 # --- Empaquetado Electron (por si más adelante usas electron-builder) ---
 dist/
@@ -33,7 +34,5 @@ builder-effective-config.yaml
 # .vscode/
 # .idea/
 
-# --- Base de datos con datos personales ---
-# Por defecto expenses.db NO está ignorada (puedes versionarla en un repo privado).
-# Si NO quieres que git la rastree, descomenta la línea siguiente:
-# data/expenses.db
+## Datos locales / credenciales
+# supabase-config.json

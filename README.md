@@ -29,7 +29,7 @@ npm install
 npm start
 ```
 
-En **Windows**, si `npm install` falla al compilar `better-sqlite3`, instala [Build Tools for Visual Studio](https://visualstudio.microsoft.com/visual-cpp-build-tools/) (carga de trabajo “Desarrollo para el escritorio con C++”) y vuelve a ejecutar `npm install`.
+En **Windows**, si `npm install` falla, instala [Build Tools for Visual Studio](https://visualstudio.microsoft.com/visual-cpp-build-tools/) y vuelve a ejecutar `npm install`.
 
 ## Categorías disponibles
 - 🌮 Comida
@@ -46,19 +46,18 @@ En **Windows**, si `npm install` falla al compilar `better-sqlite3`, instala [Bu
 - 📦 Otro
 
 ## Dónde se guardan los datos
-Los datos viven en **SQLite** en la carpeta del proyecto:
+Los datos viven en **Supabase (PostgreSQL)**.
 
-`gastos-app/data/expenses.db`
-
-Así puedes reutilizar el mismo archivo que otro sistema de gastos con la misma tabla `expenses` (`date`, `category`, `description`, `amount`, `tip`). En la app, **importe** = `amount`, **propina** = `tip`; el total mostrado es **amount + tip**. Las categorías del otro sistema (p. ej. `Comidas`, `Rufo` / `Gastos Rufo`; gastos de mascota se unifican con **Gastos Rufo**) se mapean a la interfaz cuando es posible; el resto aparece como “otro”.
+- Configuración: `SUPABASE_URL` y `SUPABASE_ANON_KEY` (ver `.env.example`), o `supabase-config.json` en `userData` para la app instalada.
+- Esquema: `supabase/schema.sql`
 
 ## Estructura del proyecto
 ```
 gastos-app/
-  main.js          → Proceso principal (Electron + better-sqlite3)
-  data/expenses.db → Base SQLite compartible con otros programas
+  main.js          → Proceso principal (Electron + Supabase)
   preload.js       → Puente seguro entre UI y sistema
   index.html       → Interfaz de usuario
   package.json
+  supabase/        → Esquema SQL
 ```
 # family_expenses

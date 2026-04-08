@@ -1,6 +1,5 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron')
 const path = require('path')
-const fs = require('fs')
 
 try {
   require('dotenv').config({ path: path.join(__dirname, '.env') })
@@ -8,75 +7,10 @@ try {
   /* dotenv opcional */
 }
 
-const { PERSON_DAFNE } = require('./gasto-common')
 const { createBackend, readSupabaseConfig } = require('./ipc-backend')
 
 let mainWindow
-let db
 let backend
-
-let DATA_DIR
-let DB_PATH
-
-/** En .app empaquetado no se puede escribir dentro de app.asar; BD en Application Support */
-function resolveDataPaths() {
-  DATA_DIR = app.isPackaged
-    ? path.join(app.getPath('userData'), 'data')
-    : path.join(__dirname, 'data')
-  DB_PATH = path.join(DATA_DIR, 'expenses.db')
-}
-
-function initSqlite() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true })
-  }
-
-  const Database = require('better-sqlite3')
-  db = new Database(DB_PATH)
-  db.pragma('journal_mode = WAL')
-
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS expenses (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      date TEXT NOT NULL,
-      category TEXT NOT NULL,
-      description TEXT,
-      amount REAL NOT NULL,
-      tip REAL NOT NULL DEFAULT 0,
-      person TEXT NOT NULL DEFAULT 'Dafne Avila'
-    );
-  `)
-
-  migratePersonColumn()
-  migrateMascotaToRufo()
-  migrateCapacitacionLabel()
-}
-
-function migrateCapacitacionLabel() {
-  db.prepare(`UPDATE expenses SET category = ? WHERE category = ?`).run(
-    'Capacitación',
-    'Capacitación Personal'
-  )
-}
-
-function migrateMascotaToRufo() {
-  db.prepare(`
-    UPDATE expenses SET category = ?
-    WHERE lower(trim(category)) = 'gastos mascota'
-       OR lower(trim(category)) = 'gastos mascotas'
-       OR lower(trim(category)) = 'mascota'
-       OR lower(trim(category)) LIKE 'gastos mascota%'
-  `).run('Gastos Rufo')
-}
-
-function migratePersonColumn() {
-  const cols = db.prepare('PRAGMA table_info(expenses)').all()
-  if (cols.some((c) => c.name === 'person')) return
-  db.exec(
-    `ALTER TABLE expenses ADD COLUMN person TEXT NOT NULL DEFAULT 'Dafne Avila'`
-  )
-  db.prepare('UPDATE expenses SET person = ?').run(PERSON_DAFNE)
-}
 
 const IPC_CHANNELS = [
   'get-gastos',
@@ -235,14 +169,8 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-  resolveDataPaths()
-  if (readSupabaseConfig(app)) {
-    backend = createBackend(app, null)
-    db = null
-  } else {
-    initSqlite()
-    backend = createBackend(app, db)
-  }
+  // Solo Supabase: si no hay config, queda sin datos y se notará en getBackendInfo.
+  backend = createBackend(app)
   registerIpc()
   createWindow()
 })
@@ -256,8 +184,5 @@ app.on('activate', () => {
 })
 
 app.on('before-quit', () => {
-  if (db) {
-    db.close()
-    db = null
-  }
+  // Sin SQLite local.
 })
