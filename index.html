@@ -579,7 +579,7 @@
 <body>
 
 <div class="titlebar">
-  <span class="titlebar-title">gastos · control personal</span>
+  <span class="titlebar-title" id="titlebar-title">gastos · control personal</span>
 </div>
 
 <div class="app">
@@ -1127,6 +1127,14 @@ async function init() {
   syncMesConsultaUI()
   renderLista()
   renderStats()
+
+  try {
+    const bi = await window.gastos.getBackendInfo()
+    if (bi && bi.mode === 'supabase') {
+      const t = document.getElementById('titlebar-title')
+      if (t) t.textContent = 'gastos · control personal · Supabase'
+    }
+  } catch (_) { /* preload antiguo */ }
 }
 
 init()

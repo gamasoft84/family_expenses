@@ -8,14 +8,17 @@
     "start": "electron .",
     "postinstall": "electron-rebuild -f -w better-sqlite3",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder --mac"
+    "dist": "electron-builder --mac",
+    "migrate:supabase": "ELECTRON_RUN_AS_NODE=1 electron scripts/migrate-sqlite-to-supabase.js"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.49.1",
     "better-sqlite3": "^11.7.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@electron/rebuild": "^3.7.0",
+    "dotenv": "^16.4.5",
     "electron": "^28.0.0",
     "electron-builder": "^25.1.8"
   },
