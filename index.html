@@ -190,6 +190,22 @@
   input:focus, select:focus { border-color: var(--accent); }
   select option { background: var(--bg3); }
 
+  /* Icono del calendario (date/month): el predeterminado casi no se ve en fondo oscuro */
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="month"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(1.05);
+    opacity: 0.88;
+    cursor: pointer;
+    padding: 4px;
+    margin: 0 -2px 0 4px;
+    transform: scale(1.12);
+  }
+  input[type="date"]:hover::-webkit-calendar-picker-indicator,
+  input[type="month"]:hover::-webkit-calendar-picker-indicator {
+    opacity: 1;
+    filter: invert(1) brightness(1.2);
+  }
+
   .btn-add {
     width: 100%;
     padding: 11px;
