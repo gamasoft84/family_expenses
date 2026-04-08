@@ -140,6 +140,7 @@
     font-family: 'DM Mono', monospace;
     letter-spacing: -0.02em;
   }
+  .stat-card--tips .stat-value { color: var(--amber); }
   .stat-sub {
     font-size: 11px;
     color: var(--text3);
@@ -583,6 +584,11 @@
         <div class="stat-value" id="total-mes">$0</div>
         <div class="stat-sub" id="total-sub">0 gastos registrados</div>
       </div>
+      <div class="stat-card stat-card--tips">
+        <div class="stat-label" id="stat-propinas-label">Propinas — mes</div>
+        <div class="stat-value" id="total-propinas">$0</div>
+        <div class="stat-sub" id="propinas-sub">0 gastos con propina</div>
+      </div>
     </div>
 
     <div class="form-section">
@@ -831,6 +837,7 @@ function syncMesConsultaUI() {
       ? ` · ${filtroPersona === 'Ricardo Gama' ? 'Ricardo' : 'Dafne'}`
       : ''
   document.getElementById('stat-mes-label').textContent = 'Total — ' + fmtRangoMes(mesConsulta) + p
+  document.getElementById('stat-propinas-label').textContent = 'Propinas — ' + fmtRangoMes(mesConsulta) + p
 }
 
 function setFilter(cat, btn) {
@@ -930,6 +937,12 @@ async function renderStats() {
       ? ` · ${filtroPersona === 'Ricardo Gama' ? 'Ricardo' : 'Dafne'}`
       : ''
   document.getElementById('total-sub').textContent = `${stats.cantidad} gasto${stats.cantidad !== 1 ? 's' : ''} · ${fmtRangoMes(mesConsulta)}${pSub}`
+
+  const tip = Number(stats.propinasTotal ?? 0)
+  const nTip = Number(stats.gastosConPropina ?? 0)
+  document.getElementById('total-propinas').textContent = fmt(tip)
+  document.getElementById('propinas-sub').textContent =
+    `${nTip} gasto${nTip !== 1 ? 's' : ''} con propina · ${fmtRangoMes(mesConsulta)}${pSub}`
 
   const barsEl = document.getElementById('cat-bars')
   const inner = document.getElementById('bars-inner')

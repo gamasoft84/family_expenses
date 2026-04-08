@@ -316,6 +316,8 @@ function registerIpc() {
           .all(ym)
 
     const total = rows.reduce((s, r) => s + Number(r.amount) + Number(r.tip || 0), 0)
+    const propinasTotal = rows.reduce((s, r) => s + Number(r.tip || 0), 0)
+    const gastosConPropina = rows.filter((r) => Number(r.tip || 0) > 0).length
     const porCategoria = rows.reduce((acc, r) => {
       const slug = dbCategoryToSlug(r.category)
       acc[slug] =
@@ -323,7 +325,14 @@ function registerIpc() {
       return acc
     }, {})
 
-    return { total, porCategoria, cantidad: rows.length, yearMonth: ym }
+    return {
+      total,
+      propinasTotal,
+      gastosConPropina,
+      porCategoria,
+      cantidad: rows.length,
+      yearMonth: ym,
+    }
   })
 
   ipcMain.handle('export-excel', async (_, yearMonth) => {
