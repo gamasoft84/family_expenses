@@ -36,8 +36,7 @@
     "mac": {
       "category": "public.app-category.finance",
       "target": [
-        "dmg",
-        "zip"
+        "dmg"
       ],
       "hardenedRuntime": true
     },
