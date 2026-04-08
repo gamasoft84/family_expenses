@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control de Gastos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f13;
+    --bg2: #17171e;
+    --bg3: #1f1f28;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0eee8;
+    --text2: #8a8898;
+    --text3: #5a5a6e;
+    --accent: #c8f064;
+    --accent2: #a8d444;
+    --red: #ff6b6b;
+    --amber: #fbbf24;
+    --blue: #60a5fa;
+    --purple: #a78bfa;
+    --teal: #34d399;
+
+    --cat-comida: #f97316;
+    --cat-transporte: #60a5fa;
+    --cat-entretenimiento: #a78bfa;
+    --cat-salud: #34d399;
+    --cat-servicios: #fbbf24;
+    --cat-ropa: #f472b6;
+    --cat-otro: #8a8898;
+  }
+
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+
+  /* TITLEBAR */
+  .titlebar {
+    height: 38px;
+    -webkit-app-region: drag;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    padding: 0 80px 0 20px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .titlebar-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  /* LAYOUT */
+  .app {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .sidebar-header {
+    padding: 24px 20px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .brand-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .brand-icon svg { width: 16px; height: 16px; }
+  .brand-name {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  .stat-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+  }
+  .stat-label {
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 4px;
+  }
+  .stat-value {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: -0.02em;
+  }
+  .stat-sub {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 2px;
+  }
+
+  /* FORM */
+  .form-section {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+  }
+  .form-section::-webkit-scrollbar { width: 3px; }
+  .form-section::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .form-title {
+    font-size: 11px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 12px;
+  }
+
+  .field { margin-bottom: 10px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    color: var(--text2);
+    margin-bottom: 5px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  input, select {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+    -webkit-app-region: no-drag;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  select option { background: var(--bg3); }
+
+  .btn-add {
+    width: 100%;
+    padding: 11px;
+    background: var(--accent);
+    color: #0f0f13;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 4px;
+    transition: background 0.15s, transform 0.1s;
+    -webkit-app-region: no-drag;
+    letter-spacing: 0.02em;
+  }
+  .btn-add:hover { background: var(--accent2); }
+  .btn-add:active { transform: scale(0.98); }
+
+  /* CATEGORY BARS */
+  .cat-bars { margin-top: 16px; }
+  .cat-bar-item { margin-bottom: 8px; }
+  .cat-bar-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .cat-bar-name { font-size: 11px; color: var(--text2); display: flex; align-items: center; gap: 6px; }
+  .cat-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .cat-bar-val { font-size: 11px; color: var(--text2); font-family: 'DM Mono', monospace; }
+  .cat-bar-bg { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .cat-bar-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+
+  /* MAIN */
+  .main {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .main-header {
+    padding: 20px 28px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .main-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 24px;
+    color: var(--text);
+    letter-spacing: -0.03em;
+  }
+  .main-title em { color: var(--accent); font-style: italic; }
+
+  .month-badge {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: var(--text2);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* FILTER */
+  .filter-bar {
+    padding: 12px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+  .filter-btn {
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text2);
+    font-size: 12px;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-app-region: no-drag;
+  }
+  .filter-btn:hover { border-color: var(--border2); color: var(--text); }
+  .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #0f0f13; font-weight: 600; }
+
+  /* LIST */
+  .list-wrap {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 28px;
+  }
+  .list-wrap::-webkit-scrollbar { width: 3px; }
+  .list-wrap::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    color: var(--text3);
+    gap: 8px;
+  }
+  .empty-icon { font-size: 32px; opacity: 0.4; }
+  .empty-text { font-size: 14px; }
+
+  .gasto-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 16px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    transition: border-color 0.15s, transform 0.1s;
+    animation: slideIn 0.2s ease;
+  }
+  .gasto-item:hover { border-color: var(--border2); }
+  .gasto-item:hover .btn-delete { opacity: 1; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .gasto-cat-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .gasto-info { flex: 1; min-width: 0; }
+  .gasto-desc {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+  }
+  .gasto-meta {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'DM Mono', monospace;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .gasto-cat-tag {
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .gasto-monto {
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+    flex-shrink: 0;
+  }
+
+  .btn-delete {
+    background: none;
+    border: none;
+    color: var(--text3);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    opacity: 0;
+    transition: all 0.15s;
+    -webkit-app-region: no-drag;
+    flex-shrink: 0;
+  }
+  .btn-delete:hover { color: var(--red); background: rgba(255,107,107,0.1); }
+
+  .date-group { margin-bottom: 16px; }
+  .date-label {
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 8px;
+    padding-left: 2px;
+  }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--accent);
+    color: #0f0f13;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: all 0.2s;
+    pointer-events: none;
+    z-index: 999;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<div class="titlebar">
+  <span class="titlebar-title">gastos · control personal</span>
+</div>
+
+<div class="app">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 2v12M5 5h4.5a1.5 1.5 0 010 3H6a1.5 1.5 0 000 3H11" stroke="#0f0f13" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <span class="brand-name">Gasto<em style="font-style:italic;color:var(--accent)">Flow</em></span>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Total este mes</div>
+        <div class="stat-value" id="total-mes">$0</div>
+        <div class="stat-sub" id="total-sub">0 gastos registrados</div>
+      </div>
+    </div>
+
+    <div class="form-section">
+      <div class="form-title">Nuevo gasto</div>
+
+      <div class="field">
+        <label>Descripción</label>
+        <input type="text" id="inp-desc" placeholder="ej. Tacos de canasta" maxlength="60">
+      </div>
+      <div class="field">
+        <label>Monto (MXN)</label>
+        <input type="number" id="inp-monto" placeholder="0.00" min="0" step="0.01">
+      </div>
+      <div class="field">
+        <label>Categoría</label>
+        <select id="inp-cat">
+          <option value="comida">🌮 Comida</option>
+          <option value="transporte">🚌 Transporte</option>
+          <option value="entretenimiento">🎬 Entretenimiento</option>
+          <option value="salud">💊 Salud</option>
+          <option value="servicios">⚡ Servicios</option>
+          <option value="ropa">👕 Ropa</option>
+          <option value="otro">📦 Otro</option>
+        </select>
+      </div>
+      <button class="btn-add" onclick="agregarGasto()">+ Agregar gasto</button>
+
+      <div class="cat-bars" id="cat-bars" style="margin-top:20px;display:none;">
+        <div class="form-title">Por categoría</div>
+        <div id="bars-inner"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="main-header">
+      <h1 class="main-title">Mis <em>gastos</em></h1>
+      <div class="month-badge" id="month-badge">—</div>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="setFilter('todos', this)">Todos</button>
+      <button class="filter-btn" onclick="setFilter('comida', this)">🌮 Comida</button>
+      <button class="filter-btn" onclick="setFilter('transporte', this)">🚌 Transporte</button>
+      <button class="filter-btn" onclick="setFilter('entretenimiento', this)">🎬 Entreten.</button>
+      <button class="filter-btn" onclick="setFilter('salud', this)">💊 Salud</button>
+      <button class="filter-btn" onclick="setFilter('servicios', this)">⚡ Servicios</button>
+      <button class="filter-btn" onclick="setFilter('ropa', this)">👕 Ropa</button>
+      <button class="filter-btn" onclick="setFilter('otro', this)">📦 Otro</button>
+    </div>
+
+    <div class="list-wrap" id="lista"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CATS = {
+  comida:          { emoji: '🌮', color: '#f97316', bg: 'rgba(249,115,22,0.15)' },
+  transporte:      { emoji: '🚌', color: '#60a5fa', bg: 'rgba(96,165,250,0.15)' },
+  entretenimiento: { emoji: '🎬', color: '#a78bfa', bg: 'rgba(167,139,250,0.15)' },
+  salud:           { emoji: '💊', color: '#34d399', bg: 'rgba(52,211,153,0.15)' },
+  servicios:       { emoji: '⚡', color: '#fbbf24', bg: 'rgba(251,191,36,0.15)' },
+  ropa:            { emoji: '👕', color: '#f472b6', bg: 'rgba(244,114,182,0.15)' },
+  otro:            { emoji: '📦', color: '#8a8898', bg: 'rgba(138,136,152,0.15)' },
+}
+
+let allGastos = []
+let filtroActivo = 'todos'
+
+function fmt(n) {
+  return '$' + n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+function fmtFecha(iso) {
+  const d = new Date(iso)
+  return d.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' })
+}
+
+function fmtFechaKey(iso) {
+  const d = new Date(iso)
+  return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+function setFilter(cat, btn) {
+  filtroActivo = cat
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'))
+  btn.classList.add('active')
+  renderLista()
+}
+
+function renderLista() {
+  const lista = document.getElementById('lista')
+  const gastos = filtroActivo === 'todos'
+    ? allGastos
+    : allGastos.filter(g => g.categoria === filtroActivo)
+
+  if (gastos.length === 0) {
+    lista.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">💸</div>
+      <div class="empty-text">Sin gastos registrados</div>
+    </div>`
+    return
+  }
+
+  const grupos = {}
+  gastos.forEach(g => {
+    const key = fmtFechaKey(g.fecha)
+    if (!grupos[key]) grupos[key] = []
+    grupos[key].push(g)
+  })
+
+  lista.innerHTML = Object.entries(grupos).map(([fecha, items]) => `
+    <div class="date-group">
+      <div class="date-label">${fecha}</div>
+      ${items.map(g => {
+        const cat = CATS[g.categoria] || CATS.otro
+        return `<div class="gasto-item" id="item-${g.id}">
+          <div class="gasto-cat-icon" style="background:${cat.bg}">
+            <span style="font-size:16px">${cat.emoji}</span>
+          </div>
+          <div class="gasto-info">
+            <div class="gasto-desc">${g.descripcion}</div>
+            <div class="gasto-meta">
+              <span style="color:${cat.color};background:${cat.bg};padding:1px 7px;border-radius:10px;font-size:10px;text-transform:uppercase;letter-spacing:0.05em;font-weight:500">${g.categoria}</span>
+              <span>${fmtFecha(g.fecha)}</span>
+            </div>
+          </div>
+          <div class="gasto-monto">${fmt(g.monto)}</div>
+          <button class="btn-delete" onclick="eliminar(${g.id})" title="Eliminar">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>`
+      }).join('')}
+    </div>
+  `).join('')
+}
+
+async function renderStats() {
+  const stats = await window.gastos.getStats()
+
+  document.getElementById('total-mes').textContent = fmt(stats.total)
+  document.getElementById('total-sub').textContent = `${stats.cantidad} gasto${stats.cantidad !== 1 ? 's' : ''} este mes`
+
+  const barsEl = document.getElementById('cat-bars')
+  const inner = document.getElementById('bars-inner')
+
+  const entries = Object.entries(stats.porCategoria).sort((a, b) => b[1] - a[1])
+  if (entries.length === 0) { barsEl.style.display = 'none'; return }
+
+  barsEl.style.display = 'block'
+  const max = entries[0][1]
+  inner.innerHTML = entries.map(([cat, val]) => {
+    const c = CATS[cat] || CATS.otro
+    const pct = Math.round((val / max) * 100)
+    return `<div class="cat-bar-item">
+      <div class="cat-bar-info">
+        <span class="cat-bar-name"><span class="cat-dot" style="background:${c.color}"></span>${c.emoji} ${cat}</span>
+        <span class="cat-bar-val">${fmt(val)}</span>
+      </div>
+      <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:${pct}%;background:${c.color}"></div></div>
+    </div>`
+  }).join('')
+}
+
+function setMonthBadge() {
+  const now = new Date()
+  const mes = now.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' })
+  document.getElementById('month-badge').textContent = mes.charAt(0).toUpperCase() + mes.slice(1)
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast')
+  t.textContent = msg
+  t.classList.add('show')
+  setTimeout(() => t.classList.remove('show'), 2200)
+}
+
+async function agregarGasto() {
+  const desc = document.getElementById('inp-desc').value.trim()
+  const monto = parseFloat(document.getElementById('inp-monto').value)
+  const cat = document.getElementById('inp-cat').value
+
+  if (!desc) { document.getElementById('inp-desc').focus(); return }
+  if (!monto || monto <= 0) { document.getElementById('inp-monto').focus(); return }
+
+  allGastos = await window.gastos.addGasto({ descripcion: desc, monto, categoria: cat })
+
+  document.getElementById('inp-desc').value = ''
+  document.getElementById('inp-monto').value = ''
+  document.getElementById('inp-desc').focus()
+
+  renderLista()
+  renderStats()
+  showToast('Gasto agregado ✓')
+}
+
+async function eliminar(id) {
+  allGastos = await window.gastos.deleteGasto(id)
+  renderLista()
+  renderStats()
+}
+
+document.getElementById('inp-monto').addEventListener('keydown', e => {
+  if (e.key === 'Enter') agregarGasto()
+})
+document.getElementById('inp-desc').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('inp-monto').focus()
+})
+
+async function init() {
+  setMonthBadge()
+  allGastos = await window.gastos.getGastos()
+  renderLista()
+  renderStats()
+}
+
+init()
+</script>
+</body>
+</html>

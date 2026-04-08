@@ -1,0 +1,17 @@
+{
+  "name": "control-gastos",
+  "version": "1.0.0",
+  "description": "App de control de gastos personal",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "postinstall": "electron-rebuild -f -w better-sqlite3"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^3.7.0",
+    "electron": "^28.0.0"
+  }
+}

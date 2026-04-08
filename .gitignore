@@ -1,0 +1,39 @@
+# --- Dependencias ---
+node_modules/
+
+# --- Registros y caché npm ---
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- Sistema operativo ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# --- SQLite (modo WAL): NO subir estos; son temporales y pueden romper copias ---
+*.db-wal
+*.db-shm
+
+# --- Empaquetado Electron (por si más adelante usas electron-builder) ---
+dist/
+out/
+release/
+*.dmg
+*.exe
+*.blockmap
+builder-effective-config.yaml
+
+# --- Entorno / secretos ---
+.env
+.env.*
+!.env.example
+
+# --- Editor (opcional; descomenta si no quieres subir ajustes locales) ---
+# .vscode/
+# .idea/
+
+# --- Base de datos con datos personales ---
+# Por defecto expenses.db NO está ignorada (puedes versionarla en un repo privado).
+# Si NO quieres que git la rastree, descomenta la línea siguiente:
+# data/expenses.db
