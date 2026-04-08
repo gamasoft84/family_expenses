@@ -28,6 +28,7 @@
 
     --cat-comida: #f97316;
     --cat-transporte: #60a5fa;
+    --cat-seguro: #0ea5e9;
     --cat-entretenimiento: #a78bfa;
     --cat-salud: #34d399;
     --cat-servicios: #fbbf24;
@@ -241,15 +242,48 @@
   }
   .main-title em { color: var(--accent); font-style: italic; }
 
-  .month-badge {
-    background: var(--bg3);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 6px 14px;
-    font-size: 12px;
-    color: var(--text2);
+  .main-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .month-nav-label {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .input-month {
+    width: auto;
+    min-width: 148px;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--text);
     font-family: 'DM Mono', monospace;
   }
+
+  .btn-export {
+    width: 100%;
+    padding: 9px 12px;
+    margin-top: 8px;
+    background: transparent;
+    color: var(--text2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    -webkit-app-region: no-drag;
+  }
+  .btn-export:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .btn-export.secondary { margin-top: 6px; font-size: 11px; color: var(--text3); }
 
   /* FILTER */
   .filter-bar {
@@ -273,6 +307,35 @@
   }
   .filter-btn:hover { border-color: var(--border2); color: var(--text); }
   .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #0f0f13; font-weight: 600; }
+
+  .filter-bar-person {
+    border-top: 1px solid var(--border);
+    align-items: center;
+  }
+  .filter-group-label {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'DM Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-right: 4px;
+    flex-shrink: 0;
+  }
+
+  .filter-bar-desc {
+    border-top: 1px solid var(--border);
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .input-filter-desc {
+    flex: 1;
+    min-width: 160px;
+    max-width: 360px;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  .input-filter-desc::placeholder { color: var(--text3); opacity: 0.8; }
 
   /* LIST */
   .list-wrap {
@@ -359,12 +422,29 @@
     letter-spacing: 0.05em;
   }
 
+  .gasto-monto-wrap {
+    flex-shrink: 0;
+    text-align: right;
+  }
   .gasto-monto {
     font-family: 'DM Mono', monospace;
     font-size: 16px;
     font-weight: 500;
     color: var(--text);
-    flex-shrink: 0;
+  }
+  .gasto-tip-badge {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 4px 9px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.02em;
+    color: var(--amber);
+    background: rgba(251, 191, 36, 0.16);
+    border: 1px solid rgba(251, 191, 36, 0.45);
+    box-shadow: 0 0 12px rgba(251, 191, 36, 0.08);
   }
 
   .btn-delete {
@@ -499,7 +579,7 @@
       </div>
 
       <div class="stat-card">
-        <div class="stat-label">Total este mes</div>
+        <div class="stat-label" id="stat-mes-label">Total — mes</div>
         <div class="stat-value" id="total-mes">$0</div>
         <div class="stat-sub" id="total-sub">0 gastos registrados</div>
       </div>
@@ -513,8 +593,16 @@
         <input type="text" id="inp-desc" placeholder="ej. Tacos de canasta" maxlength="60">
       </div>
       <div class="field">
-        <label>Monto (MXN)</label>
-        <input type="number" id="inp-monto" placeholder="0.00" min="0" step="0.01">
+        <label>Fecha del gasto</label>
+        <input type="date" id="inp-fecha" title="Por defecto es hoy; cámbiala si el gasto fue en otro día">
+      </div>
+      <div class="field">
+        <label>Importe (MXN, sin propina)</label>
+        <input type="number" id="inp-importe" placeholder="0.00" min="0" step="0.01">
+      </div>
+      <div class="field">
+        <label>Propina (opcional)</label>
+        <input type="number" id="inp-propina" placeholder="0.00" min="0" step="0.01">
       </div>
       <div class="field">
         <label>Categoría</label>
@@ -523,6 +611,7 @@
           <option value="postres">🍰 Postres</option>
           <option value="despensa">🛒 Despensa</option>
           <option value="transporte">🚌 Transporte</option>
+          <option value="seguro">🛡️ Seguro</option>
           <option value="entretenimiento">🎬 Entretenimiento</option>
           <option value="salud">💊 Salud</option>
           <option value="servicios">⚡ Servicios</option>
@@ -541,6 +630,10 @@
       </div>
       <button class="btn-add" onclick="agregarGasto()">+ Agregar gasto</button>
 
+      <div class="form-title" style="margin-top:18px">Exportar</div>
+      <button type="button" class="btn-export" onclick="descargarExcel(false)">Descargar Excel (mes consultado)</button>
+      <button type="button" class="btn-export secondary" onclick="descargarExcel(true)">Excel — todo el historial</button>
+
       <div class="cat-bars" id="cat-bars" style="margin-top:20px;display:none;">
         <div class="form-title">Por categoría</div>
         <div id="bars-inner"></div>
@@ -552,22 +645,38 @@
   <div class="main">
     <div class="main-header">
       <h1 class="main-title">Mis <em>gastos</em></h1>
-      <div class="month-badge" id="month-badge">—</div>
+      <div class="main-header-actions">
+        <span class="month-nav-label">Ver mes</span>
+        <input type="month" class="input-month" id="mes-consulta" title="Cambiar mes de la lista y resumen">
+      </div>
     </div>
 
     <div class="filter-bar">
-      <button class="filter-btn active" onclick="setFilter('todos', this)">Todos</button>
-      <button class="filter-btn" onclick="setFilter('comida', this)">🌮 Comida</button>
-      <button class="filter-btn" onclick="setFilter('postres', this)">🍰 Postres</button>
-      <button class="filter-btn" onclick="setFilter('despensa', this)">🛒 Despensa</button>
-      <button class="filter-btn" onclick="setFilter('transporte', this)">🚌 Transporte</button>
-      <button class="filter-btn" onclick="setFilter('entretenimiento', this)">🎬 Entreten.</button>
-      <button class="filter-btn" onclick="setFilter('salud', this)">💊 Salud</button>
-      <button class="filter-btn" onclick="setFilter('servicios', this)">⚡ Servicios</button>
-      <button class="filter-btn" onclick="setFilter('capacitacion', this)">📚 Capacit.</button>
-      <button class="filter-btn" onclick="setFilter('ropa', this)">👕 Ropa</button>
-      <button class="filter-btn" onclick="setFilter('rufo', this)">🐕 Rufo</button>
-      <button class="filter-btn" onclick="setFilter('otro', this)">📦 Otro</button>
+      <button type="button" class="filter-btn filter-cat active" onclick="setFilter('todos', this)">Todos</button>
+      <button type="button" class="filter-btn filter-cat" onclick="setFilter('comida', this)">🌮 Comida</button>
+      <button type="button" class="filter-btn filter-cat" onclick="setFilter('postres', this)">🍰 Postres</button>
+      <button type="button" class="filter-btn filter-cat" onclick="setFilter('despensa', this)">🛒 Despensa</button>
+      <button type="button" class="filter-btn filter-cat" onclick="setFilter('transporte', this)">🚌 Transporte</button>
+      <button type="button" class="filter-btn filter-cat" onclick="setFilter('seguro', this)">🛡️ Seguro</button>
+      <button type="button" class="filter-btn filter-cat" onclick="setFilter('entretenimiento', this)">🎬 Entreten.</button>
+      <button type="button" class="filter-btn filter-cat" onclick="setFilter('salud', this)">💊 Salud</button>
+      <button type="button" class="filter-btn filter-cat" onclick="setFilter('servicios', this)">⚡ Servicios</button>
+      <button type="button" class="filter-btn filter-cat" onclick="setFilter('capacitacion', this)">📚 Capacit.</button>
+      <button type="button" class="filter-btn filter-cat" onclick="setFilter('ropa', this)">👕 Ropa</button>
+      <button type="button" class="filter-btn filter-cat" onclick="setFilter('rufo', this)">🐕 Rufo</button>
+      <button type="button" class="filter-btn filter-cat" onclick="setFilter('otro', this)">📦 Otro</button>
+    </div>
+
+    <div class="filter-bar filter-bar-person">
+      <span class="filter-group-label">Quién</span>
+      <button type="button" class="filter-btn filter-person active" onclick="setPersonFilter('todos', this)">Todos</button>
+      <button type="button" class="filter-btn filter-person" onclick="setPersonFilter('Dafne Avila', this)">Dafne</button>
+      <button type="button" class="filter-btn filter-person" onclick="setPersonFilter('Ricardo Gama', this)">Ricardo</button>
+    </div>
+
+    <div class="filter-bar filter-bar-desc">
+      <span class="filter-group-label">Descripción</span>
+      <input type="search" class="input-filter-desc" id="filtro-desc" placeholder="Buscar texto en descripción…" autocomplete="off" enterkeyhint="search">
     </div>
 
     <div class="list-wrap" id="lista"></div>
@@ -582,8 +691,12 @@
       <input type="text" id="edit-desc" maxlength="60">
     </div>
     <div class="field">
-      <label>Monto (MXN)</label>
-      <input type="number" id="edit-monto" min="0" step="0.01">
+      <label>Importe (sin propina)</label>
+      <input type="number" id="edit-importe" min="0" step="0.01">
+    </div>
+    <div class="field">
+      <label>Propina</label>
+      <input type="number" id="edit-propina" min="0" step="0.01" placeholder="0">
     </div>
     <div class="field">
       <label>Fecha</label>
@@ -596,6 +709,7 @@
         <option value="postres">🍰 Postres</option>
         <option value="despensa">🛒 Despensa</option>
         <option value="transporte">🚌 Transporte</option>
+        <option value="seguro">🛡️ Seguro</option>
         <option value="entretenimiento">🎬 Entretenimiento</option>
         <option value="salud">💊 Salud</option>
         <option value="servicios">⚡ Servicios</option>
@@ -627,6 +741,7 @@ const CATS = {
   postres:         { emoji: '🍰', color: '#e879f9', bg: 'rgba(232,121,249,0.15)' },
   despensa:        { emoji: '🛒', color: '#84cc16', bg: 'rgba(132,204,22,0.15)' },
   transporte:      { emoji: '🚌', color: '#60a5fa', bg: 'rgba(96,165,250,0.15)' },
+  seguro:          { emoji: '🛡️', color: '#0ea5e9', bg: 'rgba(14,165,233,0.15)', label: 'Seguro' },
   entretenimiento: { emoji: '🎬', color: '#a78bfa', bg: 'rgba(167,139,250,0.15)' },
   salud:           { emoji: '💊', color: '#34d399', bg: 'rgba(52,211,153,0.15)' },
   servicios:       { emoji: '⚡', color: '#fbbf24', bg: 'rgba(251,191,36,0.15)' },
@@ -638,7 +753,9 @@ const CATS = {
 
 let allGastos = []
 let filtroActivo = 'todos'
+let filtroPersona = 'todos'
 let editId = null
+let mesConsulta = ''
 
 function isoToDateInputValue(iso) {
   const d = new Date(iso)
@@ -646,6 +763,11 @@ function isoToDateInputValue(iso) {
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
   return `${y}-${m}-${day}`
+}
+
+function todayDateInputValue() {
+  const t = new Date()
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`
 }
 
 function fmt(n) {
@@ -674,23 +796,85 @@ function etiquetaCategoria(slug) {
   return slug
 }
 
+function normBusqueda(s) {
+  return String(s)
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
+function isoBelongsToMonth(iso, ym) {
+  const d = new Date(iso)
+  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+  return key === ym
+}
+
+function fmtRangoMes(ym) {
+  if (!ym || !/^\d{4}-\d{2}$/.test(ym)) return '—'
+  const [y, m] = ym.split('-').map(Number)
+  const d = new Date(y, m - 1, 1)
+  const s = d.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' })
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
+function syncMesConsultaUI() {
+  const p =
+    filtroPersona !== 'todos'
+      ? ` · ${filtroPersona === 'Ricardo Gama' ? 'Ricardo' : 'Dafne'}`
+      : ''
+  document.getElementById('stat-mes-label').textContent = 'Total — ' + fmtRangoMes(mesConsulta) + p
+}
+
 function setFilter(cat, btn) {
   filtroActivo = cat
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'))
+  document.querySelectorAll('.filter-cat').forEach(b => b.classList.remove('active'))
   btn.classList.add('active')
   renderLista()
 }
 
+function setPersonFilter(personKey, btn) {
+  filtroPersona = personKey
+  document.querySelectorAll('.filter-person').forEach(b => b.classList.remove('active'))
+  btn.classList.add('active')
+  syncMesConsultaUI()
+  renderLista()
+  renderStats()
+}
+
 function renderLista() {
   const lista = document.getElementById('lista')
-  const gastos = filtroActivo === 'todos'
-    ? allGastos
-    : allGastos.filter(g => g.categoria === filtroActivo)
+  let gastos = allGastos.filter(g => isoBelongsToMonth(g.fecha, mesConsulta))
+  if (filtroPersona !== 'todos') {
+    gastos = gastos.filter(g => g.persona === filtroPersona)
+  }
+  if (filtroActivo !== 'todos') {
+    gastos = gastos.filter(g => g.categoria === filtroActivo)
+  }
+
+  const qDesc = (document.getElementById('filtro-desc').value || '').trim()
+  if (qDesc) {
+    const nq = normBusqueda(qDesc)
+    gastos = gastos.filter(g => normBusqueda(g.descripcion || '').includes(nq))
+  }
 
   if (gastos.length === 0) {
+    const pHint = filtroPersona !== 'todos'
+      ? ` · ${filtroPersona === 'Ricardo Gama' ? 'Ricardo' : 'Dafne'}`
+      : ''
+    const qHint = qDesc
+      ? `<br><span style="font-size:12px;color:var(--text3)">Nada coincide con «${escapeHtml(qDesc)}»</span>`
+      : ''
     lista.innerHTML = `<div class="empty-state">
       <div class="empty-icon">💸</div>
-      <div class="empty-text">Sin gastos registrados</div>
+      <div class="empty-text">Sin gastos en ${fmtRangoMes(mesConsulta)}${pHint}${qHint}</div>
     </div>`
     return
   }
@@ -719,7 +903,10 @@ function renderLista() {
               <span>${fmtFecha(g.fecha)}</span>
             </div>
           </div>
-          <div class="gasto-monto">${fmt(g.monto)}</div>
+          <div class="gasto-monto-wrap">
+            <div class="gasto-monto">${fmt(g.monto)}</div>
+            ${Number(g.propina) > 0 ? `<div class="gasto-tip-badge" title="Propina incluida en el total">Propina ${fmt(g.propina)}</div>` : ''}
+          </div>
           <button class="btn-delete" onclick="event.stopPropagation(); eliminar(${g.id})" title="Eliminar">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -732,10 +919,17 @@ function renderLista() {
 }
 
 async function renderStats() {
-  const stats = await window.gastos.getStats()
+  const stats = await window.gastos.getStats({
+    yearMonth: mesConsulta,
+    persona: filtroPersona,
+  })
 
   document.getElementById('total-mes').textContent = fmt(stats.total)
-  document.getElementById('total-sub').textContent = `${stats.cantidad} gasto${stats.cantidad !== 1 ? 's' : ''} este mes`
+  const pSub =
+    filtroPersona !== 'todos'
+      ? ` · ${filtroPersona === 'Ricardo Gama' ? 'Ricardo' : 'Dafne'}`
+      : ''
+  document.getElementById('total-sub').textContent = `${stats.cantidad} gasto${stats.cantidad !== 1 ? 's' : ''} · ${fmtRangoMes(mesConsulta)}${pSub}`
 
   const barsEl = document.getElementById('cat-bars')
   const inner = document.getElementById('bars-inner')
@@ -758,12 +952,6 @@ async function renderStats() {
   }).join('')
 }
 
-function setMonthBadge() {
-  const now = new Date()
-  const mes = now.toLocaleDateString('es-MX', { month: 'long', year: 'numeric' })
-  document.getElementById('month-badge').textContent = mes.charAt(0).toUpperCase() + mes.slice(1)
-}
-
 function showToast(msg) {
   const t = document.getElementById('toast')
   t.textContent = msg
@@ -771,19 +959,39 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2200)
 }
 
+async function descargarExcel(todoHistorial) {
+  const r = await window.gastos.exportExcel(todoHistorial ? null : mesConsulta)
+  if (!r || r.canceled) return
+  showToast('Excel guardado ✓')
+}
+
 async function agregarGasto() {
   const desc = document.getElementById('inp-desc').value.trim()
-  const monto = parseFloat(document.getElementById('inp-monto').value)
+  const fecha = document.getElementById('inp-fecha').value
+  const importe = parseFloat(document.getElementById('inp-importe').value)
+  const propinaRaw = document.getElementById('inp-propina').value
+  const propina = propinaRaw === '' ? 0 : parseFloat(propinaRaw)
   const cat = document.getElementById('inp-cat').value
 
   if (!desc) { document.getElementById('inp-desc').focus(); return }
-  if (!monto || monto <= 0) { document.getElementById('inp-monto').focus(); return }
+  if (!fecha) { document.getElementById('inp-fecha').focus(); return }
+  if (!importe || importe <= 0) { document.getElementById('inp-importe').focus(); return }
+  if (Number.isNaN(propina) || propina < 0) { document.getElementById('inp-propina').focus(); return }
 
   const persona = document.getElementById('inp-persona').value
-  allGastos = await window.gastos.addGasto({ descripcion: desc, monto, categoria: cat, persona })
+  allGastos = await window.gastos.addGasto({
+    descripcion: desc,
+    fecha,
+    importe,
+    propina,
+    categoria: cat,
+    persona,
+  })
 
   document.getElementById('inp-desc').value = ''
-  document.getElementById('inp-monto').value = ''
+  document.getElementById('inp-importe').value = ''
+  document.getElementById('inp-propina').value = ''
+  document.getElementById('inp-fecha').value = todayDateInputValue()
   document.getElementById('inp-desc').focus()
 
   renderLista()
@@ -804,7 +1012,10 @@ function abrirEditar(ev, id) {
   editId = id
   const catKeys = Object.keys(CATS)
   document.getElementById('edit-desc').value = g.descripcion
-  document.getElementById('edit-monto').value = g.monto
+  const imp = typeof g.importe === 'number' ? g.importe : g.monto - (Number(g.propina) || 0)
+  document.getElementById('edit-importe').value = imp
+  const pr = typeof g.propina === 'number' ? g.propina : 0
+  document.getElementById('edit-propina').value = pr > 0 ? pr : ''
   document.getElementById('edit-cat').value = catKeys.includes(g.categoria) ? g.categoria : 'otro'
   document.getElementById('edit-persona').value =
     g.persona === 'Ricardo Gama' ? 'Ricardo Gama' : 'Dafne Avila'
@@ -821,17 +1032,21 @@ function cerrarEditModal() {
 async function guardarEdicion() {
   if (editId == null) return
   const desc = document.getElementById('edit-desc').value.trim()
-  const monto = parseFloat(document.getElementById('edit-monto').value)
+  const importe = parseFloat(document.getElementById('edit-importe').value)
+  const propinaRaw = document.getElementById('edit-propina').value
+  const propina = propinaRaw === '' ? 0 : parseFloat(propinaRaw)
   const cat = document.getElementById('edit-cat').value
   const persona = document.getElementById('edit-persona').value
   const fecha = document.getElementById('edit-fecha').value
   if (!desc) { document.getElementById('edit-desc').focus(); return }
-  if (!monto || monto <= 0) { document.getElementById('edit-monto').focus(); return }
+  if (!importe || importe <= 0) { document.getElementById('edit-importe').focus(); return }
+  if (Number.isNaN(propina) || propina < 0) { document.getElementById('edit-propina').focus(); return }
   if (!fecha) { document.getElementById('edit-fecha').focus(); return }
   allGastos = await window.gastos.updateGasto({
     id: editId,
     descripcion: desc,
-    monto,
+    importe,
+    propina,
     categoria: cat,
     persona,
     fecha
@@ -848,16 +1063,39 @@ document.addEventListener('keydown', e => {
   }
 })
 
-document.getElementById('inp-monto').addEventListener('keydown', e => {
+document.getElementById('inp-importe').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('inp-propina').focus()
+})
+document.getElementById('inp-propina').addEventListener('keydown', e => {
   if (e.key === 'Enter') agregarGasto()
 })
 document.getElementById('inp-desc').addEventListener('keydown', e => {
-  if (e.key === 'Enter') document.getElementById('inp-monto').focus()
+  if (e.key === 'Enter') document.getElementById('inp-fecha').focus()
+})
+document.getElementById('inp-fecha').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('inp-importe').focus()
 })
 
 async function init() {
-  setMonthBadge()
+  document.getElementById('inp-fecha').value = todayDateInputValue()
+
+  const mesEl = document.getElementById('mes-consulta')
+  const n = new Date()
+  mesEl.value = `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}`
+  mesConsulta = mesEl.value
+  mesEl.addEventListener('change', () => {
+    mesConsulta = mesEl.value || mesConsulta
+    syncMesConsultaUI()
+    renderLista()
+    renderStats()
+  })
+
+  document.getElementById('filtro-desc').addEventListener('input', () => {
+    renderLista()
+  })
+
   allGastos = await window.gastos.getGastos()
+  syncMesConsultaUI()
   renderLista()
   renderStats()
 }

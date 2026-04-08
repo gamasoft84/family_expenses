@@ -5,5 +5,6 @@ contextBridge.exposeInMainWorld('gastos', {
   addGasto: (gasto) => ipcRenderer.invoke('add-gasto', gasto),
   updateGasto: (gasto) => ipcRenderer.invoke('update-gasto', gasto),
   deleteGasto: (id) => ipcRenderer.invoke('delete-gasto', id),
-  getStats: () => ipcRenderer.invoke('get-stats')
+  getStats: (payload) => ipcRenderer.invoke('get-stats', payload),
+  exportExcel: (yearMonth) => ipcRenderer.invoke('export-excel', yearMonth),
 })

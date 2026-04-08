@@ -3,9 +3,11 @@
 App de escritorio para llevar el control de tus gastos, construida con Electron.
 
 ## Características
-- Registro de gastos con descripción, monto y categoría
-- Estadísticas del mes actual (total + desglose por categoría)
-- Filtro por categoría
+- Registro de gastos con descripción, **fecha** (por defecto hoy), monto y categoría
+- Selector de **mes** para ver lista y totales de cualquier mes
+- Estadísticas del mes elegido (total + desglose por categoría)
+- **Exportar a Excel** (.xlsx): mes consultado o historial completo
+- Filtro por categoría, por persona (Dafne / Ricardo) y por texto en la descripción
 - Agrupación por fecha
 - Datos guardados localmente en JSON (no necesita internet ni servidor)
 - Diseño oscuro moderno
@@ -34,6 +36,7 @@ En **Windows**, si `npm install` falla al compilar `better-sqlite3`, instala [Bu
 - 🍰 Postres
 - 🛒 Despensa
 - 🚌 Transporte
+- 🛡️ Seguro (p. ej. auto)
 - 🎬 Entretenimiento
 - 💊 Salud
 - ⚡ Servicios
@@ -47,7 +50,7 @@ Los datos viven en **SQLite** en la carpeta del proyecto:
 
 `gastos-app/data/expenses.db`
 
-Así puedes reutilizar el mismo archivo que otro sistema de gastos con la misma tabla `expenses` (`date`, `category`, `description`, `amount`, `tip`). El monto mostrado en la app es **amount + tip**. Las categorías del otro sistema (p. ej. `Comidas`, `Rufo` / `Gastos Rufo`; gastos de mascota se unifican con **Gastos Rufo**) se mapean a la interfaz cuando es posible; el resto aparece como “otro”.
+Así puedes reutilizar el mismo archivo que otro sistema de gastos con la misma tabla `expenses` (`date`, `category`, `description`, `amount`, `tip`). En la app, **importe** = `amount`, **propina** = `tip`; el total mostrado es **amount + tip**. Las categorías del otro sistema (p. ej. `Comidas`, `Rufo` / `Gastos Rufo`; gastos de mascota se unifican con **Gastos Rufo**) se mapean a la interfaz cuando es posible; el resto aparece como “otro”.
 
 ## Estructura del proyecto
 ```

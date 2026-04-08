@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron')
+const { app, BrowserWindow, ipcMain, dialog } = require('electron')
 const path = require('path')
 const fs = require('fs')
 
@@ -32,6 +32,8 @@ const DB_TO_SLUG = {
   'gastos mascota': 'rufo',
   'gastos mascotas': 'rufo',
   transporte: 'transporte',
+  seguro: 'seguro',
+  seguros: 'seguro',
   entretenimiento: 'entretenimiento',
   salud: 'salud',
   servicios: 'servicios',
@@ -49,6 +51,7 @@ const SLUG_TO_DB = {
   despensa: 'Despensa',
   rufo: 'Gastos Rufo',
   transporte: 'Transporte',
+  seguro: 'Seguro',
   entretenimiento: 'Entretenimiento',
   salud: 'Salud',
   servicios: 'Servicios',
@@ -64,6 +67,7 @@ function dbCategoryToSlug(dbCat) {
   if (k.includes('despensa')) return 'despensa'
   if (k.includes('comida')) return 'comida'
   if (k.includes('transport')) return 'transporte'
+  if (k.includes('seguro')) return 'seguro'
   if (k.includes('entreten')) return 'entretenimiento'
   if (k.includes('salud')) return 'salud'
   if (k.includes('servicio')) return 'servicios'
@@ -118,12 +122,31 @@ function currentYearMonth() {
   return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}`
 }
 
+function coerceYearMonth(ym) {
+  if (ym == null || String(ym).trim() === '') return null
+  const s = String(ym).trim()
+  return /^\d{4}-\d{2}$/.test(s) ? s : null
+}
+
+/** importe = amount (sin propina), propina = tip */
+function coerceAmountTip(importeRaw, propinaRaw) {
+  const amount = Number(importeRaw)
+  const tip = Math.max(0, Number(propinaRaw) || 0)
+  if (!Number.isFinite(amount) || amount <= 0) return null
+  if (!Number.isFinite(tip) || tip < 0) return null
+  return { amount, tip }
+}
+
 function rowToGasto(row) {
+  const amount = Number(row.amount)
+  const tip = Number(row.tip || 0)
   return {
     id: row.id,
     fecha: dateTextToIso(row.date),
     descripcion: row.description || '',
-    monto: Number(row.amount) + Number(row.tip || 0),
+    importe: amount,
+    propina: tip,
+    monto: amount + tip,
     categoria: dbCategoryToSlug(row.category),
     persona: coercePerson(row.person),
   }
@@ -189,6 +212,7 @@ const IPC_CHANNELS = [
   'delete-gasto',
   'update-gasto',
   'get-stats',
+  'export-excel',
 ]
 
 function registerIpc() {
@@ -203,15 +227,22 @@ function registerIpc() {
 
   ipcMain.handle('add-gasto', (_, gasto) => {
     const persona = coercePerson(gasto.persona)
+    const at = coerceAmountTip(gasto.importe, gasto.propina)
+    if (!at) {
+      const rows = db.prepare('SELECT * FROM expenses ORDER BY date DESC, id DESC').all()
+      return rows.map(rowToGasto)
+    }
     const insert = db.prepare(`
       INSERT INTO expenses (date, category, description, amount, tip, person)
-      VALUES (?, ?, ?, ?, 0, ?)
+      VALUES (?, ?, ?, ?, ?, ?)
     `)
+    const fechaRegistro = coerceDateYmd(gasto.fecha) || todayYmd()
     insert.run(
-      todayYmd(),
+      fechaRegistro,
       slugToDbCategory(gasto.categoria),
       gasto.descripcion,
-      gasto.monto,
+      at.amount,
+      at.tip,
       persona
     )
     const rows = db.prepare('SELECT * FROM expenses ORDER BY date DESC, id DESC').all()
@@ -232,16 +263,22 @@ function registerIpc() {
     }
     const persona = coercePerson(payload.persona)
     const dateStr = coerceDateYmd(payload.fecha)
+    const at = coerceAmountTip(payload.importe, payload.propina)
+    if (!at) {
+      const rows = db.prepare('SELECT * FROM expenses ORDER BY date DESC, id DESC').all()
+      return rows.map(rowToGasto)
+    }
     const stmt = db.prepare(`
       UPDATE expenses
-      SET date = ?, category = ?, description = ?, amount = ?, tip = 0, person = ?
+      SET date = ?, category = ?, description = ?, amount = ?, tip = ?, person = ?
       WHERE id = ?
     `)
     stmt.run(
       dateStr,
       slugToDbCategory(payload.categoria),
       String(payload.descripcion || ''),
-      Number(payload.monto),
+      at.amount,
+      at.tip,
       persona,
       id
     )
@@ -249,13 +286,34 @@ function registerIpc() {
     return rows.map(rowToGasto)
   })
 
-  ipcMain.handle('get-stats', () => {
-    const ym = currentYearMonth()
-    const rows = db
-      .prepare(
-        `SELECT category, amount, tip FROM expenses WHERE substr(date, 1, 7) = ?`
-      )
-      .all(ym)
+  ipcMain.handle('get-stats', (_, payload) => {
+    let ymRaw = null
+    let personaFiltro = null
+    if (typeof payload === 'string') {
+      ymRaw = payload
+    } else if (payload && typeof payload === 'object') {
+      ymRaw = payload.yearMonth
+      personaFiltro = payload.persona
+    }
+    const ym = coerceYearMonth(ymRaw) || currentYearMonth()
+    const p =
+      personaFiltro &&
+      personaFiltro !== 'todos' &&
+      String(personaFiltro).trim()
+        ? String(personaFiltro).trim()
+        : null
+
+    const rows = p
+      ? db
+          .prepare(
+            `SELECT category, amount, tip FROM expenses WHERE substr(date, 1, 7) = ? AND person = ?`
+          )
+          .all(ym, p)
+      : db
+          .prepare(
+            `SELECT category, amount, tip FROM expenses WHERE substr(date, 1, 7) = ?`
+          )
+          .all(ym)
 
     const total = rows.reduce((s, r) => s + Number(r.amount) + Number(r.tip || 0), 0)
     const porCategoria = rows.reduce((acc, r) => {
@@ -265,7 +323,57 @@ function registerIpc() {
       return acc
     }, {})
 
-    return { total, porCategoria, cantidad: rows.length }
+    return { total, porCategoria, cantidad: rows.length, yearMonth: ym }
+  })
+
+  ipcMain.handle('export-excel', async (_, yearMonth) => {
+    const win = BrowserWindow.getFocusedWindow() || mainWindow
+    const ym = coerceYearMonth(yearMonth)
+    const suffix = ym || 'todos'
+    const { canceled, filePath } = await dialog.showSaveDialog(win, {
+      title: 'Guardar Excel',
+      defaultPath: `gastos-${suffix}.xlsx`,
+      filters: [{ name: 'Excel', extensions: ['xlsx'] }],
+    })
+    if (canceled || !filePath) return { ok: false, canceled: true }
+
+    const XLSX = require('xlsx')
+    let rows
+    if (ym) {
+      rows = db
+        .prepare(
+          `SELECT date, category, description, amount, tip, person FROM expenses WHERE substr(date,1,7) = ? ORDER BY date ASC, id ASC`
+        )
+        .all(ym)
+    } else {
+      rows = db
+        .prepare(
+          `SELECT date, category, description, amount, tip, person FROM expenses ORDER BY date ASC, id ASC`
+        )
+        .all()
+    }
+
+    const data = [
+      ['Fecha', 'Categoría', 'Descripción', 'Importe', 'Propina', 'Total (MXN)', 'Persona'],
+      ...rows.map((r) => {
+        const imp = Number(r.amount)
+        const prop = Number(r.tip || 0)
+        return [
+          r.date,
+          r.category,
+          r.description || '',
+          imp,
+          prop,
+          imp + prop,
+          r.person || '',
+        ]
+      }),
+    ]
+    const ws = XLSX.utils.aoa_to_sheet(data)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Gastos')
+    XLSX.writeFile(wb, filePath)
+    return { ok: true, path: filePath }
   })
 }
 
