@@ -339,6 +339,11 @@
     display: flex;
     gap: 8px;
     align-items: center;
+    flex-wrap: wrap;
+  }
+  .gasto-persona {
+    color: var(--text2);
+    font-weight: 500;
   }
   .gasto-cat-tag {
     padding: 1px 7px;
@@ -451,6 +456,13 @@
           <option value="otro">📦 Otro</option>
         </select>
       </div>
+      <div class="field">
+        <label>¿Quién gastó?</label>
+        <select id="inp-persona">
+          <option value="Dafne Avila" selected>Dafne Avila</option>
+          <option value="Ricardo Gama">Ricardo Gama</option>
+        </select>
+      </div>
       <button class="btn-add" onclick="agregarGasto()">+ Agregar gasto</button>
 
       <div class="cat-bars" id="cat-bars" style="margin-top:20px;display:none;">
@@ -512,6 +524,12 @@ function fmtFechaKey(iso) {
   return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
+function etiquetaPersona(persona) {
+  if (persona === 'Ricardo Gama') return 'Ricardo Gama'
+  if (persona === 'Dafne Avila') return 'Dafne Avila'
+  return persona || 'Dafne Avila'
+}
+
 function setFilter(cat, btn) {
   filtroActivo = cat
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'))
@@ -553,6 +571,7 @@ function renderLista() {
             <div class="gasto-desc">${g.descripcion}</div>
             <div class="gasto-meta">
               <span style="color:${cat.color};background:${cat.bg};padding:1px 7px;border-radius:10px;font-size:10px;text-transform:uppercase;letter-spacing:0.05em;font-weight:500">${g.categoria}</span>
+              <span class="gasto-persona">${etiquetaPersona(g.persona)}</span>
               <span>${fmtFecha(g.fecha)}</span>
             </div>
           </div>
@@ -616,7 +635,8 @@ async function agregarGasto() {
   if (!desc) { document.getElementById('inp-desc').focus(); return }
   if (!monto || monto <= 0) { document.getElementById('inp-monto').focus(); return }
 
-  allGastos = await window.gastos.addGasto({ descripcion: desc, monto, categoria: cat })
+  const persona = document.getElementById('inp-persona').value
+  allGastos = await window.gastos.addGasto({ descripcion: desc, monto, categoria: cat, persona })
 
   document.getElementById('inp-desc').value = ''
   document.getElementById('inp-monto').value = ''

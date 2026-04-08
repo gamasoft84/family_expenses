@@ -8,6 +8,9 @@ let db
 const DATA_DIR = path.join(__dirname, 'data')
 const DB_PATH = path.join(DATA_DIR, 'expenses.db')
 
+const PERSON_DAFNE = 'Dafne Avila'
+const PERSON_RICARDO = 'Ricardo Gama'
+
 function stripAccents(s) {
   return s.normalize('NFD').replace(/\p{M}/gu, '')
 }
@@ -56,6 +59,14 @@ function slugToDbCategory(slug) {
   return SLUG_TO_DB[slug] || 'Otro'
 }
 
+function coercePerson(value) {
+  if (value == null || String(value).trim() === '') return PERSON_DAFNE
+  const v = String(value).trim()
+  if (normKey(v) === normKey(PERSON_RICARDO)) return PERSON_RICARDO
+  if (normKey(v) === normKey(PERSON_DAFNE)) return PERSON_DAFNE
+  return PERSON_DAFNE
+}
+
 /** date TEXT 'YYYY-MM-DD' → ISO local (evita corrimientos por UTC) */
 function dateTextToIso(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number)
@@ -83,6 +94,7 @@ function rowToGasto(row) {
     descripcion: row.description || '',
     monto: Number(row.amount) + Number(row.tip || 0),
     categoria: dbCategoryToSlug(row.category),
+    persona: coercePerson(row.person),
   }
 }
 
@@ -102,9 +114,21 @@ function initSqlite() {
       category TEXT NOT NULL,
       description TEXT,
       amount REAL NOT NULL,
-      tip REAL NOT NULL DEFAULT 0
+      tip REAL NOT NULL DEFAULT 0,
+      person TEXT NOT NULL DEFAULT 'Dafne Avila'
     );
   `)
+
+  migratePersonColumn()
+}
+
+function migratePersonColumn() {
+  const cols = db.prepare('PRAGMA table_info(expenses)').all()
+  if (cols.some((c) => c.name === 'person')) return
+  db.exec(
+    `ALTER TABLE expenses ADD COLUMN person TEXT NOT NULL DEFAULT 'Dafne Avila'`
+  )
+  db.prepare('UPDATE expenses SET person = ?').run(PERSON_DAFNE)
 }
 
 function registerIpc() {
@@ -114,15 +138,17 @@ function registerIpc() {
   })
 
   ipcMain.handle('add-gasto', (_, gasto) => {
+    const persona = coercePerson(gasto.persona)
     const insert = db.prepare(`
-      INSERT INTO expenses (date, category, description, amount, tip)
-      VALUES (?, ?, ?, ?, 0)
+      INSERT INTO expenses (date, category, description, amount, tip, person)
+      VALUES (?, ?, ?, ?, 0, ?)
     `)
     insert.run(
       todayYmd(),
       slugToDbCategory(gasto.categoria),
       gasto.descripcion,
-      gasto.monto
+      gasto.monto,
+      persona
     )
     const rows = db.prepare('SELECT * FROM expenses ORDER BY date DESC, id DESC').all()
     return rows.map(rowToGasto)
