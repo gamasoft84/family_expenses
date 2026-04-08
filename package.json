@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "description": "App de control de gastos personal",
   "main": "main.js",
+  "author": "Gamasoft",
   "scripts": {
     "start": "electron .",
-    "postinstall": "electron-rebuild -f -w better-sqlite3"
+    "postinstall": "electron-rebuild -f -w better-sqlite3",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --mac"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",
@@ -13,6 +16,33 @@
   },
   "devDependencies": {
     "@electron/rebuild": "^3.7.0",
-    "electron": "^28.0.0"
+    "electron": "^28.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.gamasoft.gastoflow",
+    "productName": "GastoFlow",
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/better-sqlite3/**/*"
+    ],
+    "files": [
+      "**/*",
+      "!data/**/*",
+      "!release/**/*",
+      "!.git/**/*",
+      "!**/*.md"
+    ],
+    "mac": {
+      "category": "public.app-category.finance",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "hardenedRuntime": true
+    },
+    "directories": {
+      "output": "release"
+    }
   }
 }

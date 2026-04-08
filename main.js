@@ -5,8 +5,16 @@ const fs = require('fs')
 let mainWindow
 let db
 
-const DATA_DIR = path.join(__dirname, 'data')
-const DB_PATH = path.join(DATA_DIR, 'expenses.db')
+let DATA_DIR
+let DB_PATH
+
+/** En .app empaquetado no se puede escribir dentro de app.asar; BD en Application Support */
+function resolveDataPaths() {
+  DATA_DIR = app.isPackaged
+    ? path.join(app.getPath('userData'), 'data')
+    : path.join(__dirname, 'data')
+  DB_PATH = path.join(DATA_DIR, 'expenses.db')
+}
 
 const PERSON_DAFNE = 'Dafne Avila'
 const PERSON_RICARDO = 'Ricardo Gama'
@@ -406,6 +414,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  resolveDataPaths()
   initSqlite()
   registerIpc()
   createWindow()
