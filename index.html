@@ -302,6 +302,7 @@
     margin-bottom: 8px;
     transition: border-color 0.15s, transform 0.1s;
     animation: slideIn 0.2s ease;
+    cursor: pointer;
   }
   .gasto-item:hover { border-color: var(--border2); }
   .gasto-item:hover .btn-delete { opacity: 1; }
@@ -375,6 +376,73 @@
     flex-shrink: 0;
   }
   .btn-delete:hover { color: var(--red); background: rgba(255,107,107,0.1); }
+
+  /* EDIT MODAL */
+  .edit-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15,15,19,0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    -webkit-app-region: no-drag;
+  }
+  .edit-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .edit-modal {
+    width: 100%;
+    max-width: 380px;
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 14px;
+    padding: 22px 22px 18px;
+    box-shadow: 0 24px 48px rgba(0,0,0,0.45);
+  }
+  .edit-modal h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    font-weight: 400;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+  .edit-modal h2 em {
+    color: var(--accent);
+    font-style: italic;
+  }
+  .edit-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+  }
+  .edit-actions button {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: background 0.15s, opacity 0.15s;
+  }
+  .btn-edit-cancel {
+    background: var(--bg3);
+    color: var(--text2);
+    border: 1px solid var(--border) !important;
+  }
+  .btn-edit-cancel:hover { color: var(--text); border-color: var(--border2) !important; }
+  .btn-edit-save {
+    background: var(--accent);
+    color: #0f0f13;
+  }
+  .btn-edit-save:hover { background: var(--accent2); }
 
   .date-group { margin-bottom: 16px; }
   .date-label {
@@ -494,6 +562,47 @@
   </div>
 </div>
 
+<div class="edit-overlay" id="edit-overlay" onclick="if(event.target===this) cerrarEditModal()">
+  <div class="edit-modal" onclick="event.stopPropagation()">
+    <h2>Editar <em>gasto</em></h2>
+    <div class="field">
+      <label>Descripción</label>
+      <input type="text" id="edit-desc" maxlength="60">
+    </div>
+    <div class="field">
+      <label>Monto (MXN)</label>
+      <input type="number" id="edit-monto" min="0" step="0.01">
+    </div>
+    <div class="field">
+      <label>Fecha</label>
+      <input type="date" id="edit-fecha">
+    </div>
+    <div class="field">
+      <label>Categoría</label>
+      <select id="edit-cat">
+        <option value="comida">🌮 Comida</option>
+        <option value="transporte">🚌 Transporte</option>
+        <option value="entretenimiento">🎬 Entretenimiento</option>
+        <option value="salud">💊 Salud</option>
+        <option value="servicios">⚡ Servicios</option>
+        <option value="ropa">👕 Ropa</option>
+        <option value="otro">📦 Otro</option>
+      </select>
+    </div>
+    <div class="field" style="margin-bottom:0">
+      <label>¿Quién gastó?</label>
+      <select id="edit-persona">
+        <option value="Dafne Avila">Dafne Avila</option>
+        <option value="Ricardo Gama">Ricardo Gama</option>
+      </select>
+    </div>
+    <div class="edit-actions">
+      <button type="button" class="btn-edit-cancel" onclick="cerrarEditModal()">Cancelar</button>
+      <button type="button" class="btn-edit-save" onclick="guardarEdicion()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -509,6 +618,15 @@ const CATS = {
 
 let allGastos = []
 let filtroActivo = 'todos'
+let editId = null
+
+function isoToDateInputValue(iso) {
+  const d = new Date(iso)
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
 
 function fmt(n) {
   return '$' + n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -563,7 +681,7 @@ function renderLista() {
       <div class="date-label">${fecha}</div>
       ${items.map(g => {
         const cat = CATS[g.categoria] || CATS.otro
-        return `<div class="gasto-item" id="item-${g.id}">
+        return `<div class="gasto-item" id="item-${g.id}" title="Clic para editar" onclick="abrirEditar(event, ${g.id})">
           <div class="gasto-cat-icon" style="background:${cat.bg}">
             <span style="font-size:16px">${cat.emoji}</span>
           </div>
@@ -576,7 +694,7 @@ function renderLista() {
             </div>
           </div>
           <div class="gasto-monto">${fmt(g.monto)}</div>
-          <button class="btn-delete" onclick="eliminar(${g.id})" title="Eliminar">
+          <button class="btn-delete" onclick="event.stopPropagation(); eliminar(${g.id})" title="Eliminar">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
             </svg>
@@ -652,6 +770,57 @@ async function eliminar(id) {
   renderLista()
   renderStats()
 }
+
+function abrirEditar(ev, id) {
+  if (ev.target.closest('.btn-delete')) return
+  const g = allGastos.find(x => x.id === id)
+  if (!g) return
+  editId = id
+  const catKeys = Object.keys(CATS)
+  document.getElementById('edit-desc').value = g.descripcion
+  document.getElementById('edit-monto').value = g.monto
+  document.getElementById('edit-cat').value = catKeys.includes(g.categoria) ? g.categoria : 'otro'
+  document.getElementById('edit-persona').value =
+    g.persona === 'Ricardo Gama' ? 'Ricardo Gama' : 'Dafne Avila'
+  document.getElementById('edit-fecha').value = isoToDateInputValue(g.fecha)
+  document.getElementById('edit-overlay').classList.add('open')
+  document.getElementById('edit-desc').focus()
+}
+
+function cerrarEditModal() {
+  document.getElementById('edit-overlay').classList.remove('open')
+  editId = null
+}
+
+async function guardarEdicion() {
+  if (editId == null) return
+  const desc = document.getElementById('edit-desc').value.trim()
+  const monto = parseFloat(document.getElementById('edit-monto').value)
+  const cat = document.getElementById('edit-cat').value
+  const persona = document.getElementById('edit-persona').value
+  const fecha = document.getElementById('edit-fecha').value
+  if (!desc) { document.getElementById('edit-desc').focus(); return }
+  if (!monto || monto <= 0) { document.getElementById('edit-monto').focus(); return }
+  if (!fecha) { document.getElementById('edit-fecha').focus(); return }
+  allGastos = await window.gastos.updateGasto({
+    id: editId,
+    descripcion: desc,
+    monto,
+    categoria: cat,
+    persona,
+    fecha
+  })
+  cerrarEditModal()
+  renderLista()
+  renderStats()
+  showToast('Gasto actualizado ✓')
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('edit-overlay').classList.contains('open')) {
+    cerrarEditModal()
+  }
+})
 
 document.getElementById('inp-monto').addEventListener('keydown', e => {
   if (e.key === 'Enter') agregarGasto()

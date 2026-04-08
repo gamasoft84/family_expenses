@@ -82,6 +82,18 @@ function todayYmd() {
   return `${y}-${m}-${d}`
 }
 
+function coerceDateYmd(value) {
+  if (value == null || String(value).trim() === '') return todayYmd()
+  const s = String(value).trim()
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s
+  const d = new Date(s)
+  if (Number.isNaN(d.getTime())) return todayYmd()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 function currentYearMonth() {
   const t = new Date()
   return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}`
@@ -156,6 +168,31 @@ function registerIpc() {
 
   ipcMain.handle('delete-gasto', (_, id) => {
     db.prepare('DELETE FROM expenses WHERE id = ?').run(id)
+    const rows = db.prepare('SELECT * FROM expenses ORDER BY date DESC, id DESC').all()
+    return rows.map(rowToGasto)
+  })
+
+  ipcMain.handle('update-gasto', (_, payload) => {
+    const id = Number(payload.id)
+    if (!Number.isInteger(id) || id < 1) {
+      const rows = db.prepare('SELECT * FROM expenses ORDER BY date DESC, id DESC').all()
+      return rows.map(rowToGasto)
+    }
+    const persona = coercePerson(payload.persona)
+    const dateStr = coerceDateYmd(payload.fecha)
+    const stmt = db.prepare(`
+      UPDATE expenses
+      SET date = ?, category = ?, description = ?, amount = ?, tip = 0, person = ?
+      WHERE id = ?
+    `)
+    stmt.run(
+      dateStr,
+      slugToDbCategory(payload.categoria),
+      String(payload.descripcion || ''),
+      Number(payload.monto),
+      persona,
+      id
+    )
     const rows = db.prepare('SELECT * FROM expenses ORDER BY date DESC, id DESC').all()
     return rows.map(rowToGasto)
   })
