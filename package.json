@@ -9,6 +9,7 @@
     "postinstall": "electron-rebuild -f -w better-sqlite3",
     "pack": "electron-builder --dir",
     "dist": "electron-builder --mac",
+    "dist:win": "electron-builder --win --x64",
     "migrate:supabase": "ELECTRON_RUN_AS_NODE=1 electron scripts/migrate-sqlite-to-supabase.js"
   },
   "dependencies": {
@@ -42,6 +43,15 @@
         "dmg"
       ],
       "hardenedRuntime": true
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
     },
     "directories": {
       "output": "release"
