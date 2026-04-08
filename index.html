@@ -32,6 +32,10 @@
     --cat-salud: #34d399;
     --cat-servicios: #fbbf24;
     --cat-ropa: #f472b6;
+    --cat-postres: #e879f9;
+    --cat-despensa: #84cc16;
+    --cat-rufo: #ea580c;
+    --cat-capacitacion: #6366f1;
     --cat-otro: #8a8898;
   }
 
@@ -516,11 +520,15 @@
         <label>Categoría</label>
         <select id="inp-cat">
           <option value="comida">🌮 Comida</option>
+          <option value="postres">🍰 Postres</option>
+          <option value="despensa">🛒 Despensa</option>
           <option value="transporte">🚌 Transporte</option>
           <option value="entretenimiento">🎬 Entretenimiento</option>
           <option value="salud">💊 Salud</option>
           <option value="servicios">⚡ Servicios</option>
+          <option value="capacitacion">📚 Capacitación</option>
           <option value="ropa">👕 Ropa</option>
+          <option value="rufo">🐕 Gastos Rufo</option>
           <option value="otro">📦 Otro</option>
         </select>
       </div>
@@ -550,11 +558,15 @@
     <div class="filter-bar">
       <button class="filter-btn active" onclick="setFilter('todos', this)">Todos</button>
       <button class="filter-btn" onclick="setFilter('comida', this)">🌮 Comida</button>
+      <button class="filter-btn" onclick="setFilter('postres', this)">🍰 Postres</button>
+      <button class="filter-btn" onclick="setFilter('despensa', this)">🛒 Despensa</button>
       <button class="filter-btn" onclick="setFilter('transporte', this)">🚌 Transporte</button>
       <button class="filter-btn" onclick="setFilter('entretenimiento', this)">🎬 Entreten.</button>
       <button class="filter-btn" onclick="setFilter('salud', this)">💊 Salud</button>
       <button class="filter-btn" onclick="setFilter('servicios', this)">⚡ Servicios</button>
+      <button class="filter-btn" onclick="setFilter('capacitacion', this)">📚 Capacit.</button>
       <button class="filter-btn" onclick="setFilter('ropa', this)">👕 Ropa</button>
+      <button class="filter-btn" onclick="setFilter('rufo', this)">🐕 Rufo</button>
       <button class="filter-btn" onclick="setFilter('otro', this)">📦 Otro</button>
     </div>
 
@@ -581,11 +593,15 @@
       <label>Categoría</label>
       <select id="edit-cat">
         <option value="comida">🌮 Comida</option>
+        <option value="postres">🍰 Postres</option>
+        <option value="despensa">🛒 Despensa</option>
         <option value="transporte">🚌 Transporte</option>
         <option value="entretenimiento">🎬 Entretenimiento</option>
         <option value="salud">💊 Salud</option>
         <option value="servicios">⚡ Servicios</option>
+        <option value="capacitacion">📚 Capacitación</option>
         <option value="ropa">👕 Ropa</option>
+        <option value="rufo">🐕 Gastos Rufo</option>
         <option value="otro">📦 Otro</option>
       </select>
     </div>
@@ -608,11 +624,15 @@
 <script>
 const CATS = {
   comida:          { emoji: '🌮', color: '#f97316', bg: 'rgba(249,115,22,0.15)' },
+  postres:         { emoji: '🍰', color: '#e879f9', bg: 'rgba(232,121,249,0.15)' },
+  despensa:        { emoji: '🛒', color: '#84cc16', bg: 'rgba(132,204,22,0.15)' },
   transporte:      { emoji: '🚌', color: '#60a5fa', bg: 'rgba(96,165,250,0.15)' },
   entretenimiento: { emoji: '🎬', color: '#a78bfa', bg: 'rgba(167,139,250,0.15)' },
   salud:           { emoji: '💊', color: '#34d399', bg: 'rgba(52,211,153,0.15)' },
   servicios:       { emoji: '⚡', color: '#fbbf24', bg: 'rgba(251,191,36,0.15)' },
+  capacitacion:    { emoji: '📚', color: '#6366f1', bg: 'rgba(99,102,241,0.15)', label: 'Capacitación' },
   ropa:            { emoji: '👕', color: '#f472b6', bg: 'rgba(244,114,182,0.15)' },
+  rufo:            { emoji: '🐕', color: '#ea580c', bg: 'rgba(234,88,12,0.15)', label: 'Gastos Rufo' },
   otro:            { emoji: '📦', color: '#8a8898', bg: 'rgba(138,136,152,0.15)' },
 }
 
@@ -646,6 +666,12 @@ function etiquetaPersona(persona) {
   if (persona === 'Ricardo Gama') return 'Ricardo Gama'
   if (persona === 'Dafne Avila') return 'Dafne Avila'
   return persona || 'Dafne Avila'
+}
+
+function etiquetaCategoria(slug) {
+  const c = CATS[slug]
+  if (c && c.label) return c.label
+  return slug
 }
 
 function setFilter(cat, btn) {
@@ -688,7 +714,7 @@ function renderLista() {
           <div class="gasto-info">
             <div class="gasto-desc">${g.descripcion}</div>
             <div class="gasto-meta">
-              <span style="color:${cat.color};background:${cat.bg};padding:1px 7px;border-radius:10px;font-size:10px;text-transform:uppercase;letter-spacing:0.05em;font-weight:500">${g.categoria}</span>
+              <span style="color:${cat.color};background:${cat.bg};padding:1px 7px;border-radius:10px;font-size:10px;text-transform:uppercase;letter-spacing:0.05em;font-weight:500">${etiquetaCategoria(g.categoria)}</span>
               <span class="gasto-persona">${etiquetaPersona(g.persona)}</span>
               <span>${fmtFecha(g.fecha)}</span>
             </div>
@@ -724,7 +750,7 @@ async function renderStats() {
     const pct = Math.round((val / max) * 100)
     return `<div class="cat-bar-item">
       <div class="cat-bar-info">
-        <span class="cat-bar-name"><span class="cat-dot" style="background:${c.color}"></span>${c.emoji} ${cat}</span>
+        <span class="cat-bar-name"><span class="cat-dot" style="background:${c.color}"></span>${c.emoji} ${etiquetaCategoria(cat)}</span>
         <span class="cat-bar-val">${fmt(val)}</span>
       </div>
       <div class="cat-bar-bg"><div class="cat-bar-fill" style="width:${pct}%;background:${c.color}"></div></div>

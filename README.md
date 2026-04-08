@@ -31,11 +31,15 @@ En **Windows**, si `npm install` falla al compilar `better-sqlite3`, instala [Bu
 
 ## Categorías disponibles
 - 🌮 Comida
+- 🍰 Postres
+- 🛒 Despensa
 - 🚌 Transporte
 - 🎬 Entretenimiento
 - 💊 Salud
 - ⚡ Servicios
+- 📚 Capacitación
 - 👕 Ropa
+- 🐕 Gastos Rufo
 - 📦 Otro
 
 ## Dónde se guardan los datos
@@ -43,7 +47,7 @@ Los datos viven en **SQLite** en la carpeta del proyecto:
 
 `gastos-app/data/expenses.db`
 
-Así puedes reutilizar el mismo archivo que otro sistema de gastos con la misma tabla `expenses` (`date`, `category`, `description`, `amount`, `tip`). El monto mostrado en la app es **amount + tip**. Las categorías del otro sistema (p. ej. `Comidas`, `Rufo`) se mapean a las categorías de la interfaz cuando es posible; el resto aparece como “otro”.
+Así puedes reutilizar el mismo archivo que otro sistema de gastos con la misma tabla `expenses` (`date`, `category`, `description`, `amount`, `tip`). El monto mostrado en la app es **amount + tip**. Las categorías del otro sistema (p. ej. `Comidas`, `Rufo` / `Gastos Rufo`; gastos de mascota se unifican con **Gastos Rufo**) se mapean a la interfaz cuando es posible; el resto aparece como “otro”.
 
 ## Estructura del proyecto
 ```

@@ -23,10 +23,20 @@ function normKey(s) {
 const DB_TO_SLUG = {
   comidas: 'comida',
   comida: 'comida',
+  postres: 'postres',
+  postre: 'postres',
+  despensa: 'despensa',
+  rufo: 'rufo',
+  'gastos rufo': 'rufo',
+  mascota: 'rufo',
+  'gastos mascota': 'rufo',
+  'gastos mascotas': 'rufo',
   transporte: 'transporte',
   entretenimiento: 'entretenimiento',
   salud: 'salud',
   servicios: 'servicios',
+  capacitacion: 'capacitacion',
+  'capacitacion personal': 'capacitacion',
   ropa: 'ropa',
   otro: 'otro',
   otros: 'otro',
@@ -35,10 +45,14 @@ const DB_TO_SLUG = {
 /** Slug de la UI → etiqueta guardada en BD (compatible con el otro sistema) */
 const SLUG_TO_DB = {
   comida: 'Comidas',
+  postres: 'Postres',
+  despensa: 'Despensa',
+  rufo: 'Gastos Rufo',
   transporte: 'Transporte',
   entretenimiento: 'Entretenimiento',
   salud: 'Salud',
   servicios: 'Servicios',
+  capacitacion: 'Capacitación',
   ropa: 'Ropa',
   otro: 'Otro',
 }
@@ -46,12 +60,17 @@ const SLUG_TO_DB = {
 function dbCategoryToSlug(dbCat) {
   const k = normKey(dbCat)
   if (DB_TO_SLUG[k]) return DB_TO_SLUG[k]
+  if (k.includes('postre')) return 'postres'
+  if (k.includes('despensa')) return 'despensa'
   if (k.includes('comida')) return 'comida'
   if (k.includes('transport')) return 'transporte'
   if (k.includes('entreten')) return 'entretenimiento'
   if (k.includes('salud')) return 'salud'
   if (k.includes('servicio')) return 'servicios'
+  if (k.includes('capacitacion')) return 'capacitacion'
   if (k.includes('ropa')) return 'ropa'
+  if (k.includes('mascota')) return 'rufo'
+  if (k.includes('rufo')) return 'rufo'
   return 'otro'
 }
 
@@ -132,6 +151,27 @@ function initSqlite() {
   `)
 
   migratePersonColumn()
+  migrateMascotaToRufo()
+  migrateCapacitacionLabel()
+}
+
+/** Registros guardados como "Capacitación Personal" → "Capacitación" */
+function migrateCapacitacionLabel() {
+  db.prepare(`UPDATE expenses SET category = ? WHERE category = ?`).run(
+    'Capacitación',
+    'Capacitación Personal'
+  )
+}
+
+/** Gastos Mascota y variantes → Gastos Rufo (misma categoría en la app) */
+function migrateMascotaToRufo() {
+  db.prepare(`
+    UPDATE expenses SET category = ?
+    WHERE lower(trim(category)) = 'gastos mascota'
+       OR lower(trim(category)) = 'gastos mascotas'
+       OR lower(trim(category)) = 'mascota'
+       OR lower(trim(category)) LIKE 'gastos mascota%'
+  `).run('Gastos Rufo')
 }
 
 function migratePersonColumn() {
@@ -143,7 +183,19 @@ function migratePersonColumn() {
   db.prepare('UPDATE expenses SET person = ?').run(PERSON_DAFNE)
 }
 
+const IPC_CHANNELS = [
+  'get-gastos',
+  'add-gasto',
+  'delete-gasto',
+  'update-gasto',
+  'get-stats',
+]
+
 function registerIpc() {
+  IPC_CHANNELS.forEach((ch) => {
+    ipcMain.removeHandler(ch)
+  })
+
   ipcMain.handle('get-gastos', () => {
     const rows = db.prepare('SELECT * FROM expenses ORDER BY date DESC, id DESC').all()
     return rows.map(rowToGasto)
