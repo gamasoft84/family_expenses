@@ -5,7 +5,7 @@
   "main": "main.js",
   "author": "Gamasoft",
   "scripts": {
-    "start": "env -u ELECTRON_RUN_AS_NODE electron .",
+    "start": "node scripts/start-electron.js",
     "pack": "electron-builder --dir",
     "dist": "electron-builder --mac",
     "dist:win": "electron-builder --win --x64"
@@ -26,6 +26,7 @@
     "asarUnpack": [],
     "files": [
       "**/*",
+      "!scripts/**/*",
       "!data/**/*",
       "!release/**/*",
       "!.git/**/*",
