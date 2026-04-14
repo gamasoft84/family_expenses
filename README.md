@@ -61,3 +61,10 @@ gastos-app/
   supabase/        → Esquema SQL
 ```
 # family_expenses
+
+
+# Dist for mac
+```
+export CSC_IDENTITY_AUTO_DISCOVERY=false
+npm run dist
+```
