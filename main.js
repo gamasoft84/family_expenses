@@ -22,6 +22,17 @@ const IPC_CHANNELS = [
   'get-backend-info',
 ]
 
+function friendlyAddGastoError(err) {
+  const m = err && err.message != null ? String(err.message) : String(err)
+  if (/expenses_pkey/i.test(m) || (/duplicate key/i.test(m) && /expenses/i.test(m))) {
+    return (
+      'La base de datos tiene el contador de IDs desincronizado. ' +
+      'En Supabase → SQL Editor ejecuta el script supabase/fix-expenses-id-sequence.sql y vuelve a intentar.'
+    )
+  }
+  return m.trim() || 'No se pudo agregar el gasto.'
+}
+
 function emptyStats(ym) {
   return {
     total: 0,
@@ -49,14 +60,18 @@ function registerIpc() {
 
   ipcMain.handle('add-gasto', async (_, gasto) => {
     try {
-      return await backend.addGasto(gasto)
+      const gastos = await backend.addGasto(gasto)
+      return { ok: true, gastos }
     } catch (e) {
       console.error('[GastoFlow] add-gasto', e)
+      const error = friendlyAddGastoError(e)
+      let gastos = []
       try {
-        return await backend.getGastos()
+        gastos = await backend.getGastos()
       } catch (_) {
-        return []
+        /* ignorar */
       }
+      return { ok: false, error, gastos }
     }
   })
 

@@ -1008,7 +1008,7 @@ async function agregarGasto() {
   if (Number.isNaN(propina) || propina < 0) { document.getElementById('inp-propina').focus(); return }
 
   const persona = document.getElementById('inp-persona').value
-  allGastos = await window.gastos.addGasto({
+  const r = await window.gastos.addGasto({
     descripcion: desc,
     fecha,
     importe,
@@ -1016,6 +1016,17 @@ async function agregarGasto() {
     categoria: cat,
     persona,
   })
+
+  const ok = r && typeof r.ok === 'boolean' ? r.ok : true
+  const lista = r && typeof r.ok === 'boolean' ? r.gastos : r
+  allGastos = Array.isArray(lista) ? lista : []
+
+  if (!ok) {
+    renderLista()
+    renderStats()
+    showToast(r.error || 'No se pudo agregar el gasto.')
+    return
+  }
 
   document.getElementById('inp-desc').value = ''
   document.getElementById('inp-importe').value = ''
